@@ -1,0 +1,22 @@
+# Compiled binary
+neural_network
+
+# Generated output
+output.txt
+
+# Object files
+*.o
+*.obj
+
+# Executables
+*.exe
+*.out
+
+# Editor files
+.vscode/
+*.swp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
