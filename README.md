@@ -7,10 +7,9 @@ This project simulates a neural network architecture on a multi-core processor u
 **Objective:** Demonstrate multi-core parallelism using processes, threads, IPC, and synchronization
 
 ## Team Members
-**TODO: Update with your team information**
-- [Student 1 Name - Roll Number]
-- [Student 2 Name - Roll Number]
-- [Student 3 Name - Roll Number]
+**Team information**
+-Ali Hamza 22i-2566
+-Minahil Asif 22i-2710
 
 ## Features
 - **Multi-Process Architecture**: Each layer runs as a separate process
