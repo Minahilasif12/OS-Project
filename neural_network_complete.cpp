@@ -97,7 +97,7 @@ vector<double> readFromPipe(int fd) {
 // Input Layer Process
 void inputLayerProcess(int pipe_fd[2], const vector<double>& initial_inputs, 
                        const vector<vector<double>>& weights, ofstream& logFile) {
-    cout << "\n=== INPUT LAYER (Process) ===" << endl;
+    cout << "\n=== INPUT LAYER (Process ID: " << getpid() << ") ===" << endl;
     logFile << "\n=== INPUT LAYER ===" << endl;
     
     cout << "Initial inputs: ";
@@ -105,6 +105,7 @@ void inputLayerProcess(int pipe_fd[2], const vector<double>& initial_inputs,
         cout << val << " ";
     }
     cout << endl;
+    cout.flush();
     
     // Create threads for 2 input neurons
     pthread_t threads[2];
@@ -126,7 +127,7 @@ void inputLayerProcess(int pipe_fd[2], const vector<double>& initial_inputs,
         outputs.push_back(neuron_data[i].output);
     }
     
-    cout << "Output: ";
+    cout << "Input Layer Outputs: ";
     logFile << "Outputs: ";
     for (double val : outputs) {
         cout << fixed << setprecision(4) << val << " ";
@@ -134,6 +135,8 @@ void inputLayerProcess(int pipe_fd[2], const vector<double>& initial_inputs,
     }
     cout << endl;
     logFile << endl;
+    cout << "=== INPUT LAYER COMPLETED ===\n" << endl;
+    cout.flush();
     
     // Send to next layer
     writeToPipe(pipe_fd[1], outputs);
@@ -146,19 +149,21 @@ void layerProcess(int read_fd, int write_fd, int layer_num, int num_neurons,
                  ofstream& logFile, vector<double>& backward_values) {
     
     cout << "\n=== " << (is_output ? "OUTPUT" : "HIDDEN") << " LAYER " 
-         << layer_num << " (Process) ===" << endl;
+         << layer_num << " (Process ID: " << getpid() << ") ===" << endl;
     logFile << "\n=== " << (is_output ? "OUTPUT" : "HIDDEN") << " LAYER " 
             << layer_num << " ===" << endl;
+    cout.flush();
     
     // Read inputs from previous layer
     vector<double> inputs = readFromPipe(read_fd);
     close(read_fd);
     
-    cout << "Received inputs (" << inputs.size() << "): ";
+    cout << "Received " << inputs.size() << " inputs from previous layer: ";
     for (double val : inputs) {
         cout << fixed << setprecision(4) << val << " ";
     }
     cout << endl;
+    cout.flush();
     
     // Create threads for neurons
     pthread_t* threads = new pthread_t[num_neurons];
@@ -180,7 +185,7 @@ void layerProcess(int read_fd, int write_fd, int layer_num, int num_neurons,
         outputs.push_back(neuron_data[i].output);
     }
     
-    cout << "Output: ";
+    cout << (is_output ? "Output" : "Hidden") << " Layer " << layer_num << " Outputs: ";
     logFile << "Outputs: ";
     for (double val : outputs) {
         cout << fixed << setprecision(4) << val << " ";
@@ -188,6 +193,7 @@ void layerProcess(int read_fd, int write_fd, int layer_num, int num_neurons,
     }
     cout << endl;
     logFile << endl;
+    cout.flush();
     
     // If output layer, compute f(x1) and f(x2)
     if (is_output) {
@@ -201,6 +207,8 @@ void layerProcess(int read_fd, int write_fd, int layer_num, int num_neurons,
         
         cout << "\nComputed f(x1) = " << fixed << setprecision(4) << fx1 << endl;
         cout << "Computed f(x2) = " << fixed << setprecision(4) << fx2 << endl;
+        cout << "=== OUTPUT LAYER COMPLETED ===\n" << endl;
+        cout.flush();
         
         logFile << "f(x1) = " << fixed << setprecision(4) << fx1 << endl;
         logFile << "f(x2) = " << fixed << setprecision(4) << fx2 << endl;
@@ -208,6 +216,8 @@ void layerProcess(int read_fd, int write_fd, int layer_num, int num_neurons,
         backward_values = {fx1, fx2};
         writeToPipe(write_fd, backward_values);
     } else {
+        cout << "=== HIDDEN LAYER " << layer_num << " COMPLETED ===\n" << endl;
+        cout.flush();
         writeToPipe(write_fd, outputs);
     }
     
@@ -236,10 +246,10 @@ int main() {
     cout << "  Multi-Core Process & Thread Based" << endl;
     cout << "========================================" << endl;
     
-    cout << "\nEnter number of hidden layers: ";
+    cout << "\nEnter number of hidden layers (recommended: 2-3): ";
     cin >> num_hidden_layers;
     
-    cout << "Enter number of neurons in each hidden/output layer: ";
+    cout << "Enter number of neurons in each hidden/output layer (recommended: 4-8): ";
     cin >> neurons_per_layer;
     
     // Open output file
@@ -262,7 +272,9 @@ int main() {
     vector<double> initial_inputs = parseLine(line);
     input_file.close();
     
-    cout << "\n*** FORWARD PASS ***" << endl;
+    cout << "\n" << string(50, '=') << endl;
+    cout << "*** FIRST FORWARD PASS ***" << endl;
+    cout << string(50, '=') << endl;
     output_file << "\n*** FORWARD PASS ***" << endl;
     
     // Calculate line offsets for weights
@@ -355,7 +367,9 @@ int main() {
     close(backward_pipe[0]);
     
     // Display backward propagation
-    cout << "\n*** BACKWARD PASS (Simulation) ***" << endl;
+    cout << "\n" << string(50, '=') << endl;
+    cout << "*** BACKWARD PASS (Simulation) ***" << endl;
+    cout << string(50, '=') << endl;
     output_file << "\n*** BACKWARD PASS ***" << endl;
     
     for (int i = num_hidden_layers; i >= 0; i--) {
@@ -368,7 +382,11 @@ int main() {
     }
     
     // Second forward pass with f(x1) and f(x2)
-    cout << "\n*** SECOND FORWARD PASS with f(x1) and f(x2) ***" << endl;
+    cout << "\n" << string(50, '=') << endl;
+    cout << "*** SECOND FORWARD PASS with f(x1) and f(x2) ***" << endl;
+    cout << "Using f(x1)=" << fixed << setprecision(4) << backward_values[0] 
+         << " and f(x2)=" << backward_values[1] << " as new inputs" << endl;
+    cout << string(50, '=') << endl;
     output_file << "\n*** SECOND FORWARD PASS with f(x1) and f(x2) ***" << endl;
     
     // Create new pipes for second forward pass
